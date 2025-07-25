@@ -5,7 +5,6 @@ package main
 
 import (
 	"log"
-
 	"github.com/joho/godotenv"
 	"github.com/nareshkarthigeyan/revly/cmd"
 )

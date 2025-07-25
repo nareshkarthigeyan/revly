@@ -17,13 +17,13 @@ import (
 )
 
 var severityPatterns = map[*regexp.Regexp]func(string) string{
-	regexp.MustCompile(`(?m)$begin:math:display$CRITICAL$end:math:display$`): func(_ string) string {
+	regexp.MustCompile(`(?m)^($begin:math:display$CRITICAL$end:math:display$)$`): func(_ string) string {
 		return color.New(color.FgRed, color.Bold).Sprint("[CRITICAL]")
 	},
-	regexp.MustCompile(`(?m)$begin:math:display$WARNING$end:math:display$`): func(_ string) string {
+	regexp.MustCompile(`(?m)^($begin:math:display$WARNING$end:math:display$)$`): func(_ string) string {
 		return color.New(color.FgYellow, color.Bold).Sprint("[WARNING]")
 	},
-	regexp.MustCompile(`(?m)$begin:math:display$INFO$end:math:display$`): func(_ string) string {
+	regexp.MustCompile(`(?m)^($begin:math:display$INFO$end:math:display$)$`): func(_ string) string {
 		return color.New(color.FgBlue).Sprint("[INFO]")
 	},
 }
