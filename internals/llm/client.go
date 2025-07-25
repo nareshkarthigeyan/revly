@@ -67,10 +67,11 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 				Use markdown formatting for code snippets and lists.
 				Start the message by giving a kind greeting and a brief summary about the diff first -  not more than 150 words.
 				Format each issue as:
-				[SEVERITY] Line <line number>: <brief summary>
+				[SEVERITY] File Name: Line <line number>: <brief summary>
 				Suggestion: <actionable recommendation>
 				Explanation: <concise reasoning or tradeoff>
 				Use one of the following severity levels: 
+				Label each finding with a tag: [CRITICAL], [WARNING], or [INFO]. These should appear at the beginning of each issue.
 				[CRITICAL]: Functional bugs, security issues, or performance bottlenecks that must be fixed.
 				[WARNING]: Bad practices, readability or maintainability concerns that should be addressed.
 				[INFO]: Optional improvements, style suggestions, or minor clarity enhancements.

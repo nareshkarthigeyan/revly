@@ -4,8 +4,10 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/glamour"
@@ -13,6 +15,25 @@ import (
 	"github.com/nareshkarthigeyan/revly/internals/llm"
 	"github.com/spf13/cobra"
 )
+
+var severityPatterns = map[*regexp.Regexp]func(string) string{
+	regexp.MustCompile(`(?m)$begin:math:display$CRITICAL$end:math:display$`): func(_ string) string {
+		return color.New(color.FgRed, color.Bold).Sprint("[CRITICAL]")
+	},
+	regexp.MustCompile(`(?m)$begin:math:display$WARNING$end:math:display$`): func(_ string) string {
+		return color.New(color.FgYellow, color.Bold).Sprint("[WARNING]")
+	},
+	regexp.MustCompile(`(?m)$begin:math:display$INFO$end:math:display$`): func(_ string) string {
+		return color.New(color.FgBlue).Sprint("[INFO]")
+	},
+}
+
+func highlightSeverities(text string) string {
+	for pattern, apply := range severityPatterns {
+		text = pattern.ReplaceAllStringFunc(text, apply)
+	}
+	return text
+}
 
 // reviewCmd represents the review command
 var reviewCmd = &cobra.Command{
@@ -90,8 +111,6 @@ Run: func(cmd *cobra.Command, args []string) {
 				return
 			}
 
-			color.Green("\n=== AI Review ===")
-
 			renderer, err := glamour.NewTermRenderer(
 				glamour.WithAutoStyle(), // Auto adapts to terminal theme
 			)
@@ -99,12 +118,16 @@ Run: func(cmd *cobra.Command, args []string) {
 				log.Fatal(err)
 			}
 
-			out, err := renderer.Render(resp)
+			highlighted := highlightSeverities(resp) // preprocess severity tags before glamour
+			rendered, err := renderer.Render(highlighted)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			color.White(out)
+			coloredOutput := highlightSeverities(rendered)
+
+			color.Green("\n=== AI Review ===")
+			fmt.Println(coloredOutput)
 			color.Green("=== END OF REVIEW ===")
 		},
 }
