@@ -36,15 +36,15 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 		return "", fmt.Errorf("OPENROUTER_KEY not set in environment")
 	}
 
-	color.Magenta("Diff length: %d bytes\n", len(diff))
 	color.Yellow("=== BEGIN DIFF ===")
 	color.White(string(diff))
 	color.Yellow("=== END DIFF ===")
+	color.Magenta("Diff length: %d bytes\n", len(diff))
 	if len(diff) < 50 {
-		return "", fmt.Errorf("Diff too small or empty")
+		return "", fmt.Errorf("diff too small or empty")
 	}
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond) // Choose an aesthetic spinner style
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Suffix = " Thinking hard about your code..."
 	s.Start()
 	defer s.Stop()
@@ -59,7 +59,24 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 		body := OpenRouterRequest{
 			Model: model,
 			Messages: []Message{
-				{Role: "system", Content: "You are Revly, a state-of-the-art code review assistant developed by Naresh Karthigeyan. You are a highly experienced senior software engineer reviewing code for performance, correctness, readability, maintainability, and security. You provide precise, constructive, and actionable feedback on code diffs. Be friendly and compassionate. Focus solely on the code and how to improve it."},
+				{Role: "system", Content: `You are Revly, a state-of-the-art AI code review assistant built by Naresh Karthigeyan. 
+				You are acting as a highly experienced senior software engineer with deep expertise in modern software development practices. 
+				Your task is to review Git code diffs with a focus on: Correctness, Performance, Readability, Maintainability, Security. 
+				Provide clear, specific, and actionable feedback. Be friendly and constructive, but don’t hesitate to point out serious issues when necessary. 
+				Speak as if you’re mentoring a peer, not criticizing a junior. 
+				Use markdown formatting for code snippets and lists.
+				Start the message by giving a kind greeting and a brief summary about the diff first -  not more than 150 words.
+				Format each issue as:
+				[SEVERITY] Line <line number>: <brief summary>
+				Suggestion: <actionable recommendation>
+				Explanation: <concise reasoning or tradeoff>
+				Use one of the following severity levels: 
+				[CRITICAL]: Functional bugs, security issues, or performance bottlenecks that must be fixed.
+				[WARNING]: Bad practices, readability or maintainability concerns that should be addressed.
+				[INFO]: Optional improvements, style suggestions, or minor clarity enhancements.
+				Do not repeat or summarize the entire diff. Focus only on lines with actual issues or suggestions. 
+				Don’t hallucinate context beyond what’s in the diff.
+				If context is missing, point that out explicitly. You are not a general assistant. Only review the code. Do not explain what you are or engage in meta-discussion.End the review with a positive, concise summary if appropriate. Your goal is to help developers ship better code, faster, with confidence. Speak as if you’re mentoring a peer, not criticizing a junior. `,},
 				{Role: "user", Content: fmt.Sprintf("Please review this Git diff:\n\n%s", diff)},
 			},
 			Stream: false,

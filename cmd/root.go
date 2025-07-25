@@ -6,17 +6,16 @@ package cmd
 import (
 	"fmt"
 	"os"
-
 	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "revly",
-	Short: "AI-powered code review assistant",
-	Long:  "Revly is a CLI tool that uses LLMs to analyze git diffs and suggest code improvements.",
+	Short: "Revly is an AI-powered code review CLI tool",
+	Long:  "Revly is a CLI tool that uses LLMs to analyze \ngit diffs and suggest code improvements,\nreview both staged and unstaged changes,\nand provide actionable feedback on code quality.\nDo not wait for PR reviews, get instant feedback on your code changes.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Revly CLI - AI Code Review Assistant\n\nTry `revly review` to get started.")
+		fmt.Println("Revly CLI - AI Code Review Assistant\n\nTry `revly review` to get started. \nFor more help, use `revly --help`.")
 	},
 }
 
@@ -30,6 +29,7 @@ func Execute() {
 }
 
 func init() {
+	// rootCmd.AddCommand(reviewCmd)
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
@@ -37,8 +37,8 @@ func init() {
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.revly.yaml)")
 
 	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// // when this action is called directly.
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 
