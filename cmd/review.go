@@ -4,10 +4,10 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/nareshkarthigeyan/revly/internals/llm"
 	"github.com/spf13/cobra"
 )
@@ -23,51 +23,52 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 		Run: func(cmd *cobra.Command, args []string) {
-		commit, _ := cmd.Flags().GetString("commit")
-		staged, _ := cmd.Flags().GetBool("staged")
+			commit, _ := cmd.Flags().GetString("commit")
+			staged, _ := cmd.Flags().GetBool("staged")
 
-		var diff []byte
-		var err error
+			var diff []byte
+			var err error
 
-		switch {
-		case commit != "":
-			target := commit
-			if commit == "true" {
-				target = "HEAD"
+			switch {
+			case commit != "":
+				target := commit
+				if commit == "true" {
+					target = "HEAD"
+				}
+				color.Cyan("Fetching diff for commit <%s>...", target)
+				diff, err = exec.Command("git", "show", target).Output()
+
+			case staged:
+				color.Cyan("Fetching staged diff...")
+				diff, err = exec.Command("git", "diff", "--cached").Output()
+
+			default:
+				color.Cyan("Fetching working directory diff...")
+				diff, err = exec.Command("git", "diff").Output()
 			}
-			fmt.Printf("Fetching diff for commit <%s>...\n", target)
-			diff, err = exec.Command("git", "show", target).Output()
 
-		case staged:
-			fmt.Println("Fetching staged diff...")
-			diff, err = exec.Command("git", "diff", "--cached").Output()
+			if err != nil {
+				color.Red("Error fetching diff: %v", err)
+				return
+			}
 
-		default:
-			fmt.Println("Fetching working directory diff...")
-			diff, err = exec.Command("git", "diff").Output()
-		}
+			if strings.TrimSpace(string(diff)) == "" {
+				color.Yellow("No changes to review.")
+				return
+			}
 
-		if err != nil {
-			fmt.Println("Error fetching diff:", err)
-			return
-		}
+			color.Green("🤖 Sending to AI...")
 
-		if strings.TrimSpace(string(diff)) == "" {
-			fmt.Println("No changes to review.")
-			return
-		}
+			resp, err := llm.ReviewDiffWithLLM(string(diff))
+			if err != nil {
+				color.Red("Error from AI: %v", err)
+				return
+			}
 
-		fmt.Println("Sending to AI...")
-
-		resp, err := llm.ReviewDiffWithLLM(string(diff))
-		if err != nil {
-			fmt.Println("Error from AI:", err)
-			return
-		}
-
-		fmt.Println("\nAI Review:")
-		fmt.Println(resp)
-	},
+			color.Green("\n=== AI Review ===")
+			color.White(resp)
+			color.Green("\n=== END OF REVIEW ===")
+		},
 }
 
 func init() {

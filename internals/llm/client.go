@@ -7,6 +7,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/briandowns/spinner"
+	"github.com/fatih/color"
 )
 
 type OpenRouterRequest struct {
@@ -32,11 +36,18 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 		return "", fmt.Errorf("OPENROUTER_KEY not set in environment")
 	}
 
-	fmt.Println("Diff length:", len(diff))
+	color.Magenta("Diff length: %d bytes\n", len(diff))
+	color.Yellow("=== BEGIN DIFF ===")
+	color.White(string(diff))
+	color.Yellow("=== END DIFF ===")
 	if len(diff) < 50 {
 		return "", fmt.Errorf("Diff too small or empty")
 	}
 
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond) // Choose an aesthetic spinner style
+	s.Suffix = " Thinking hard about your code..."
+	s.Start()
+	defer s.Stop()
 	models := []string{
 		"qwen/qwen3-coder:free", // fallback
 		"mistralai/mistral-7b-instruct:free",
