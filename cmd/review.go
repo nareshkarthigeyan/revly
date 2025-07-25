@@ -5,8 +5,9 @@ package cmd
 
 import (
 	"fmt"
+	"os/exec"
+	"strings"
 
-	"github.com/nareshkarthigeyan/revly/internals/gitutils"
 	"github.com/nareshkarthigeyan/revly/internals/llm"
 	"github.com/spf13/cobra"
 )
@@ -23,23 +24,28 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("🔍 Fetching git diff...")
-		diff, err := gitutils.GetGitDiff()
+
+		out, err := exec.Command("git", "diff", "--cached").Output()
 		if err != nil {
-			fmt.Println("❌ Failed to get git diff:", err)
+			fmt.Println("Error running git diff:", err)
+			return
+		}
+		diff := string(out)
+		if strings.TrimSpace(diff) == "" {
+			fmt.Println("❌ No staged changes to review.")
 			return
 		}
 
 		fmt.Println("🤖 Sending to LLM...")
-		review, err := llm.ReviewDiffWithLLM(diff)
+
+		resp, err := llm.ReviewDiffWithLLM(diff)
 		if err != nil {
-			fmt.Println("❌ LLM error:", err)
+			fmt.Println("Error from LLM:", err)
 			return
 		}
 
-		fmt.Println("✅ Review complete:")
-		fmt.Println("──────────────────────────────")
-		fmt.Println(review)
-		fmt.Println("──────────────────────────────")
+		fmt.Println("\n🧠 LLM Review Output:\n")
+		fmt.Println(resp)
 	},
 }
 

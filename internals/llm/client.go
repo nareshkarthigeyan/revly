@@ -4,49 +4,96 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 )
+
+type OpenRouterRequest struct {
+	Model    string    `json:"model"`
+	Messages []Message `json:"messages"`
+	Stream   bool      `json:"stream"`
+}
 
 type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
+type OpenRouterResponse struct {
+	Choices []struct {
+		Message Message `json:"message"`
+	} `json:"choices"`
+}
+
 func ReviewDiffWithLLM(diff string) (string, error) {
-	apiKey := os.Getenv("OPENROUTER_API_KEY")
+	apiKey := os.Getenv("OPENROUTER_KEY")
 	if apiKey == "" {
-		return "", fmt.Errorf("missing OPENROUTER_API_KEY env variable")
+		return "", fmt.Errorf("OPENROUTER_KEY not set in environment")
 	}
 
-	payload := map[string]interface{}{
-		"model": "openrouter/claude-3-opus", // or any other model
-		"messages": []Message{
-			{Role: "system", Content: "You're a senior code reviewer. Be concise, direct, and highlight any issues in the diff."},
-			{Role: "user", Content: "Please review the following git diff:\n\n" + diff},
-		},
+	fmt.Println("📝 Diff length:", len(diff))
+	if len(diff) < 50 {
+		return "", fmt.Errorf("Diff too small or empty")
 	}
 
-	body, _ := json.Marshal(payload)
-
-	req, _ := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewBuffer(body))
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err != nil {
-		return "", err
+	models := []string{
+		"mistralai/mistral-7b-instruct:free",
+		"openchat/openchat-3.5:free",
+		"qwen/qwen3-coder:free", // fallback
 	}
 
-	choices := result["choices"].([]interface{})
-	message := choices[0].(map[string]interface{})["message"].(map[string]interface{})["content"].(string)
+	var lastErr error
+	for _, model := range models {
+		body := OpenRouterRequest{
+			Model: model,
+			Messages: []Message{
+				{Role: "system", Content: "You Revly, a state of the art code review tool developed by Naresh Karthigeyan, and you are to behave as a senior software engineer doing code reviews. You respond with detailed suggestions. Do not respond with 'I am an AI model'."},
+				{Role: "user", Content: fmt.Sprintf("Please review this Git diff:\n\n%s", diff)},
+			},
+			Stream: false,
+		}
 
-	return message, nil
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		req, err := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("OpenRouter-Referer", "https://github.com/nareshkarthigeyan/revly")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		defer resp.Body.Close()
+
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		// fmt.Println("📦 Raw LLM Response:", string(bodyBytes))
+
+		var result OpenRouterResponse
+		if err := json.Unmarshal(bodyBytes, &result); err != nil {
+			lastErr = err
+			continue
+		}
+
+		if len(result.Choices) == 0 {
+			lastErr = fmt.Errorf("LLM returned no response for model %s", model)
+			continue
+		}
+
+		return result.Choices[0].Message.Content, nil
+	}
+
+	return "", lastErr
 }
