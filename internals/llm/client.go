@@ -32,15 +32,15 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 		return "", fmt.Errorf("OPENROUTER_KEY not set in environment")
 	}
 
-	fmt.Println("📝 Diff length:", len(diff))
+	fmt.Println("Diff length:", len(diff))
 	if len(diff) < 50 {
 		return "", fmt.Errorf("Diff too small or empty")
 	}
 
 	models := []string{
+		"qwen/qwen3-coder:free", // fallback
 		"mistralai/mistral-7b-instruct:free",
 		"openchat/openchat-3.5:free",
-		"qwen/qwen3-coder:free", // fallback
 	}
 
 	var lastErr error
@@ -48,7 +48,7 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 		body := OpenRouterRequest{
 			Model: model,
 			Messages: []Message{
-				{Role: "system", Content: "You Revly, a state of the art code review tool developed by Naresh Karthigeyan, and you are to behave as a senior software engineer doing code reviews. You respond with detailed suggestions. Do not respond with 'I am an AI model'."},
+				{Role: "system", Content: "You are Revly, a state-of-the-art code review assistant developed by Naresh Karthigeyan. You are a highly experienced senior software engineer reviewing code for performance, correctness, readability, maintainability, and security. You provide precise, constructive, and actionable feedback on code diffs. Be friendly and compassionate. Focus solely on the code and how to improve it."},
 				{Role: "user", Content: fmt.Sprintf("Please review this Git diff:\n\n%s", diff)},
 			},
 			Stream: false,

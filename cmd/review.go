@@ -22,35 +22,59 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("🔍 Fetching git diff...")
+		Run: func(cmd *cobra.Command, args []string) {
+		commit, _ := cmd.Flags().GetString("commit")
+		staged, _ := cmd.Flags().GetBool("staged")
 
-		out, err := exec.Command("git", "diff", "--cached").Output()
+		var diff []byte
+		var err error
+
+		switch {
+		case commit != "":
+			target := commit
+			if commit == "true" {
+				target = "HEAD"
+			}
+			fmt.Printf("Fetching diff for commit <%s>...\n", target)
+			diff, err = exec.Command("git", "show", target).Output()
+
+		case staged:
+			fmt.Println("Fetching staged diff...")
+			diff, err = exec.Command("git", "diff", "--cached").Output()
+
+		default:
+			fmt.Println("Fetching working directory diff...")
+			diff, err = exec.Command("git", "diff").Output()
+		}
+
 		if err != nil {
-			fmt.Println("Error running git diff:", err)
-			return
-		}
-		diff := string(out)
-		if strings.TrimSpace(diff) == "" {
-			fmt.Println("❌ No staged changes to review.")
+			fmt.Println("Error fetching diff:", err)
 			return
 		}
 
-		fmt.Println("🤖 Sending to LLM...")
+		if strings.TrimSpace(string(diff)) == "" {
+			fmt.Println("No changes to review.")
+			return
+		}
 
-		resp, err := llm.ReviewDiffWithLLM(diff)
+		fmt.Println("Sending to AI...")
+
+		resp, err := llm.ReviewDiffWithLLM(string(diff))
 		if err != nil {
-			fmt.Println("Error from LLM:", err)
+			fmt.Println("Error from AI:", err)
 			return
 		}
 
-		fmt.Println("\n🧠 LLM Review Output:\n")
+		fmt.Println("\nAI Review:")
 		fmt.Println(resp)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(reviewCmd)
+
+	reviewCmd.Flags().StringP("commit", "c", "", "Review a specific commit (HEAD if no value given)")
+	reviewCmd.Flags().BoolP("staged", "s", false, "Review only staged changes")
 
 	// Here you will define your flags and configuration settings.
 
