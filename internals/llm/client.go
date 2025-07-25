@@ -33,7 +33,13 @@ type OpenRouterResponse struct {
 func ReviewDiffWithLLM(diff string) (string, error) {
 	apiKey := os.Getenv("OPENROUTER_KEY")
 	if apiKey == "" {
-		return "", fmt.Errorf("OPENROUTER_KEY not set in environment")
+		red := color.New(color.FgRed).SprintFunc()
+		cyan := color.New(color.FgCyan).SprintFunc()
+
+		fmt.Println(red("	Missing OPENROUTER_KEY."))
+		fmt.Println("   Add it in an .env file within your current working directory.")
+		fmt.Println("   or, Set it with:", cyan("export OPENROUTER_KEY=your-api-key"))
+		os.Exit(1)
 	}
 
 	color.Yellow("=== BEGIN DIFF ===")
@@ -64,7 +70,7 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 				Your task is to review Git code diffs with a focus on: Correctness, Performance, Readability, Maintainability, Security. 
 				Provide clear, specific, and actionable feedback. Be friendly and constructive, but don’t hesitate to point out serious issues when necessary. 
 				Speak as if you’re mentoring a peer, not criticizing a junior. 
-				Use markdown formatting for code snippets and lists.
+				Use markdown formatting for code snippets and lists. Have a clean, readable formatting.
 				Start the message by giving a kind greeting and a brief summary about the diff first -  not more than 150 words.
 				Format each issue as:
 				[SEVERITY] File Name: Line <line number>: <brief summary>
@@ -73,8 +79,11 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 				Use one of the following severity levels: 
 				Label each finding with a tag: [CRITICAL], [WARNING], or [INFO]. These should appear at the beginning of each issue.
 				[CRITICAL]: Functional bugs, security issues, or performance bottlenecks that must be fixed.
+
 				[WARNING]: Bad practices, readability or maintainability concerns that should be addressed.
+
 				[INFO]: Optional improvements, style suggestions, or minor clarity enhancements.
+
 				Do not repeat or summarize the entire diff. Focus only on lines with actual issues or suggestions. 
 				Don’t hallucinate context beyond what’s in the diff.
 				If context is missing, point that out explicitly. You are not a general assistant. Only review the code. Do not explain what you are or engage in meta-discussion.End the review with a positive, concise summary if appropriate. Your goal is to help developers ship better code, faster, with confidence. Speak as if you’re mentoring a peer, not criticizing a junior. `,},
