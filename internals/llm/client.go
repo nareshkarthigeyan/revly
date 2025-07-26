@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-
 	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 )
@@ -42,9 +41,7 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 		os.Exit(1)
 	}
 
-	color.Yellow("=== BEGIN DIFF ===")
-	color.White(string(diff))
-	color.Yellow("=== END DIFF ===")
+
 	color.Magenta("Diff length: %d bytes\n", len(diff))
 	if len(diff) < 50 {
 		return "", fmt.Errorf("diff too small or empty")

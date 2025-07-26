@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +24,14 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+
+	for _, arg := range os.Args[1:] {
+		if arg == "-v" || arg == "--version" {
+			fmt.Println("Revly version", Version)
+			os.Exit(0)
+		}
+	}
+	
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)

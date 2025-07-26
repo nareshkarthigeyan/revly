@@ -126,6 +126,13 @@ Run: func(cmd *cobra.Command, args []string) {
 
 			coloredOutput := highlightSeverities(rendered)
 
+			showDiff, _ := cmd.Flags().GetBool("diff")
+			if showDiff {
+				color.Yellow("=== BEGIN DIFF ===")
+				color.White(string(diff))
+				color.Yellow("=== END DIFF ===")
+			}
+
 			color.Green("\n=== AI Review ===")
 			fmt.Println(coloredOutput)
 			color.Green("=== END OF REVIEW ===")
@@ -134,7 +141,7 @@ Run: func(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(reviewCmd)
-
+	reviewCmd.Flags().Bool("diff", false, "Display the Git diff before running the review")
 	reviewCmd.Flags().StringP("commit", "c", "", "Review a specific commit (HEAD if no value given)")
 	reviewCmd.Flags().Lookup("commit").NoOptDefVal = "HEAD"
 	reviewCmd.Flags().BoolP("staged", "s", false, "Review only staged changes")
