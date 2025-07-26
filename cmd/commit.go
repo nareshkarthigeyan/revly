@@ -1,4 +1,3 @@
-// cmd/commit.go
 package cmd
 
 import (
@@ -14,33 +13,41 @@ import (
 )
 
 var (
-	push    bool
-	dryRun  bool
-	all     bool
+	push   bool
+	dryRun bool
+	all    bool
 )
 
 var commitCmd = &cobra.Command{
-	Use:   "commit",
-	Short: "Stage changes, review diffs, commit with relevant message and push to remote automatically.",
+	Use:   "commit [file/folder]",
+	Short: "Stage changes, generate commit message via AI, commit and optionally push.",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if all {
-			run("git", "add", ".")
+		var target string
+		if all || len(args) == 0 {
+			// default to "." if no specific file/folder provided
+			target = "."
+		} else {
+			target = args[0]
 		}
 
-		diff := capture("git", "diff", "--cached")
+		// Stage the specific target
+		run("git", "add", target)
+
+		// Capture diff of only that staged target
+		diff := capture("git", "diff", "--cached", "--", target)
 		if diff == "" {
-			fmt.Println("No staged changes to commit.")
+			fmt.Println("No staged changes to commit for:", target)
 			return
 		}
 
-		prompt := fmt.Sprintf(diff)
-		msg, err := llm.GetLLMResponse(prompt)
+		msg, err := llm.GetLLMResponse(diff)
 		if err != nil {
 			log.Fatalf("Error generating commit message: %v", err)
 		}
 		msg = strings.TrimSpace(msg)
 
-		fmt.Printf("Suggested commit message:\n \"%s\"\n\n", msg)
+		fmt.Printf("Suggested commit message:\n\"%s\"\n\n", msg)
 
 		if dryRun {
 			fmt.Println("Dry run mode: skipping commit and push.")
@@ -57,18 +64,16 @@ var commitCmd = &cobra.Command{
 
 func init() {
 	commitCmd.Flags().BoolVar(&push, "push", false, "Push after committing")
-	commitCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Only show the commit message, don't commit")
-	commitCmd.Flags().BoolVar(&all, "all", true, "Stage all changes (default: true)")
+	commitCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Only show commit message")
+	commitCmd.Flags().BoolVar(&all, "all", false, "Stage all changes (default false)")
 	rootCmd.AddCommand(commitCmd)
 }
-
 
 func run(name string, args ...string) {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		log.Fatalf("Command failed: %s %v\n%v", name, args, err)
 	}
 }
