@@ -32,6 +32,15 @@ var commitCmd = &cobra.Command{
 		}
 
 		// Stage the specific target
+		if target == "." || all {
+			fmt.Println("\tStaging all changes...")
+		} else {
+			fmt.Printf("\tStaging changes for: %s...\n", target)
+		}
+		fmt.Printf("\tgit add %s\n", target)
+		if _, err := os.Stat(target); os.IsNotExist(err) {
+			log.Fatalf("Target %s does not exist: %v", target, err)
+		}
 		run("git", "add", target)
 
 		// Capture diff of only that staged target
@@ -47,10 +56,17 @@ var commitCmd = &cobra.Command{
 		}
 		msg = strings.TrimSpace(msg)
 
-		fmt.Printf("Suggested commit message:\n\"%s\"\n\n", msg)
+		fmt.Printf("\tgit commit -m:\"%s\"\n", msg)
 
 		if dryRun {
-			fmt.Println("Dry run mode: skipping commit and push.")
+			fmt.Println("\t\033[31mDry run mode: skipping commit and push.\033[0m")
+			return
+		}
+		fmt.Print("\t\nDo you want to commit with this message? (Y/N): ")
+		var confirm string
+		fmt.Scanln(&confirm)
+		if strings.ToLower(confirm) != "y" && strings.ToLower(confirm) != "Y" {
+			fmt.Println("Commit aborted.")
 			return
 		}
 

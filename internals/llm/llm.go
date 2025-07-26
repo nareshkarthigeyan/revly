@@ -29,7 +29,9 @@ func GetLLMResponse(prompt string) (string, error) {
 	reqBody := Request{
 		Model: "mistralai/mistral-7b-instruct:free",
 		Messages: []Message{
-			{Role: "system", Content: `You're an expert Git user and code reviewer. Based on the following staged diff, write a clear and concise conventional commit message.
+			{Role: "system", Content: `You're an expert Git user and code reviewer. Based on the following staged diff, write a clear and concise conventional commit message. You are given the diff of the staged changes, and you should focus on the changes made in this commit. DO NOT GIVE ANY EXPLANATION. Just the commit message.
+			The whole commit message should be a single line, nothing more. Do not give multiple messages - put all of the messages into one. If the diff has so many changes, you should summarize the intent of the overall changes in a few words.
+			You should follow the conventional commit format.
 			Use the format: <type>(optional scope): <description>
 			Types: feat, fix, refactor, docs, style, test, chore
 			Here’s the diff:`},
