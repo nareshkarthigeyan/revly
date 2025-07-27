@@ -26,7 +26,7 @@ You can customize everything in the generated config file.`,
 }
 
 func createDefaultConfig() {
-	configPaths := []string{"revly.config.toml", "config.revly"}
+	configPaths := []string{"revly.config.toml"}
 
 	fmt.Println("Revly: Initializing configuration...")
 

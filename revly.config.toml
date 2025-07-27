@@ -10,7 +10,7 @@ base_url = "https://openrouter.ai/api/v1"
 api_base_url = "https://openrouter.ai/api/v1/chat/completions"
 # SET YOUR API KEY using EXPORT LLM_API_KEY=<your-api-key> or set it in your environment variables.
 
-[models]
+
 # List all the models you want to use in the order of preference.
 # The first model that is available will be used.
 # You can use the model names from OpenRouter or any other provider you are using.
@@ -39,4 +39,4 @@ models = [
 
 [flags]
 show_diff = true
-push_on_commit = false
+push_on_commit = true   
