@@ -1,0 +1,54 @@
+Hello there! 👋 
+
+This is a fantastic update to the `review` command. The introduction of caching is a game-changer for performance, especially for repeated reviews of the same changes. You've also improved the code's structure by refactoring the `Run` function, making it cleaner and more readable. The addition of the `--diff` flag is a nice touch for debugging and transparency. Overall, this diff shows a strong focus on user experience and efficiency. Great job!
+
+[INFO] 
+cmd/review.go: Line 18:
+Unused import
+The `"revly/internal/logging"` import is commented out and unused. Consider removing it to keep the imports clean.
+Suggestion:
+Remove the unused import statement.
+Explanation:
+Unused imports add unnecessary clutter and can slightly increase build times.
+
+[WARNING] 
+cmd/review.go: Line 72:
+Error handling for flag parsing
+The error returned by `cmd.Flags().GetString("commit")` and similar functions is ignored using `_`. While this might be acceptable for simple CLIs, handling these errors can make the application more robust.
+Suggestion:
+Capture the error and log or return it if it's not nil.
+Explanation:
+While flag parsing errors are rare, handling them can prevent unexpected behavior and provide better debugging information.
+
+[INFO] 
+cmd/review.go: Line 93:
+Magic string
+The string "HEAD" is used directly. Consider defining it as a constant for better maintainability.
+Suggestion:
+Define a constant for "HEAD" and use it instead.
+Explanation:
+Using constants for magic strings improves readability and makes it easier to update the value in the future.
+
+[INFO] 
+cmd/review.go: Line 107:
+Inconsistent logging
+The application uses both `color.Red(...)` and `log.Fatal(...)` for error reporting. While both work, using a consistent logging approach would improve maintainability.
+Suggestion:
+Consider using a single logging mechanism throughout the application.
+Explanation:
+Consistent logging makes it easier to manage and understand the application's behavior.
+
+[INFO] 
+internals/llm/client.go: Line 81:
+System prompt formatting
+The system prompt is a very long string. Consider breaking it into smaller, named constants or using a template for better readability and maintainability.
+Suggestion:
+Break the prompt into smaller parts or use a template engine.
+Explanation:
+Long strings can be hard to read and maintain. Breaking them down improves code clarity.
+
+suggestions:
+1.  **Enhance Cache Invalidation:** Implement a more sophisticated cache invalidation strategy, perhaps based on the last modification time of the repository or a user-defined TTL. This would prevent stale reviews from being served.
+2.  **Add Cache Size Limits:** To prevent the cache from growing indefinitely, consider adding a mechanism to limit its size, such as an LRU (Least Recently Used) eviction policy.
+3.  **Improve Diff Handling:** Consider adding a mechanism to handle very large diffs, perhaps by truncating them or providing a warning to the user. This would prevent potential timeouts or excessive resource consumption.
+4.  **Add Unit Tests:** Adding unit tests for the caching mechanism and the `review` command logic would increase confidence in the code's correctness and prevent regressions.

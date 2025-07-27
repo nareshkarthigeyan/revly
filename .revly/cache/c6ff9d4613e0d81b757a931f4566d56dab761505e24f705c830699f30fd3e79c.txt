@@ -1,0 +1,21 @@
+Hello! This diff introduces caching functionality to the review command, which is a nice performance improvement. It also includes some formatting adjustments and adds a diff display feature. The core logic for fetching Git diffs remains largely unchanged. Here are my observations:
+
+[WARNING] cmd/review.go: Line 17: Unused import
+Suggestion: Remove the commented out import `"revly/internal/logging"` since it's not being used.
+Explanation: Unused imports add clutter and confusion. Keeping the code clean improves readability and maintainability.
+
+[INFO] cmd/review.go: Line 71: Error handling for flag parsing
+Suggestion: Consider handling the error returned by `cmd.Flags().GetString("commit")` instead of ignoring it with `_`.
+Explanation: While flag parsing might be unlikely to fail in this context, explicitly handling or at least acknowledging errors is a good practice. You can either log the error or propagate it up if appropriate.
+
+[WARNING] cmd/review.go: Line 92: Fatal error in command execution
+Suggestion: Instead of using `log.Fatal(err)` when creating the glamour renderer, return the error to let the command framework handle it gracefully.
+Explanation: Using `log.Fatal` abruptly terminates the program, which isn't ideal for a CLI tool. Returning the error allows for better error reporting and potentially recovery.
+
+[WARNING] cmd/review.go: Line 104: Cache usage logic
+Suggestion: When retrieving from cache, consider if the cached response should still go through the highlighting and rendering process in case the logic or styles have changed.
+Explanation: If `highlightSeverities` or the glamour rendering changes between runs, the cached content might not be processed correctly. You might need to version your cache or re-process cached content.
+
+[INFO] cmd/review.go: Line 106: Cache save error ignored
+Suggestion: Handle the error returned by `cache.Save(key, resp)` or explicitly acknowledge it with a comment if it's safe to ignore.
+Explanation: Even if saving to cache is non-critical, it's good to know if it failed, as it might indicate issues with the caching system. At minimum, logging the error would be helpful for debugging.

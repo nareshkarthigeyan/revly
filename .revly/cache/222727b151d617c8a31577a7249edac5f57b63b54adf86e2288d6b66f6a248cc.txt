@@ -1,0 +1,45 @@
+Hello there! 👋 
+
+This is a great incremental improvement to the Revly code review tool. The primary enhancement here is the addition of caching functionality, which should significantly improve performance by avoiding redundant AI processing for identical diffs. I can see you've integrated a cache package and implemented a clean caching strategy using diff content as keys.
+
+Other notable improvements include better code organization in the review command with consistent indentation, and the smart move of rendering logic that now reuses cached responses when available. The diff flag handling also appears more streamlined now.
+
+The changes show good attention to developer experience with clear status messages and proper error handling. The caching implementation looks solid with proper key generation and storage/retrieval logic.
+
+Now, let's dive into some specific feedback on the changes:
+
+[WARNING]  
+File Name: cmd/review.go: Line 17:  
+Unused import statement for logging package  
+
+Suggestion:  
+Remove the unused import comment  
+
+Explanation:  
+The logging import is commented out and unused, which can be confusing for other developers. Unused imports should be removed to maintain code clarity.
+
+[INFO]  
+File Name: cmd/review.go: Line 110:  
+Cache error handling  
+
+Suggestion:  
+Consider handling potential errors from cache.Save operation  
+
+Explanation:  
+While cache.Save currently returns an error, it's ignored with _. It might be useful to log cache failures for debugging purposes, though this may not be critical if caching is meant to be best-effort.
+
+[INFO]  
+File Name: cmd/review.go: Line 76:  
+Renderer initialization in hot path  
+
+Suggestion:  
+Consider moving glamour renderer initialization outside the command execution function  
+
+Explanation:  
+The renderer is initialized on every command execution. Since it doesn't depend on dynamic values, consider making it a package-level variable to avoid repeated initialization overhead.
+
+suggestions:
+- Consider adding cache metrics (hit rate, cache size) for observability
+- Add cache eviction strategy for long-running processes
+- Consider adding a --no-cache flag for bypassing cache when needed
+- Add unit tests for the caching logic to ensure proper functionality

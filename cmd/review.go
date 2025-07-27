@@ -14,6 +14,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/nareshkarthigeyan/revly/internals/llm"
 	"github.com/spf13/cobra"
+	"github.com/nareshkarthigeyan/revly/internals/cache"
+	// "revly/internal/logging"
 )
 
 var severityPatterns = map[*regexp.Regexp]func(string) string{
@@ -38,8 +40,8 @@ func highlightSeverities(text string) string {
 // reviewCmd represents the review command
 var reviewCmd = &cobra.Command{
 	Use:   "review",
-Short: "Run an AI-powered code review on your Git changes in the working directory",
-Long: `
+	Short: "Run an AI-powered code review on your Git changes in the working directory",
+	Long: `
 	By default, 'review' inspects your working directory diff. You can target specific sources using flags:
 
 	--staged, -s        Review only staged changes (git diff --cached)
@@ -51,7 +53,7 @@ Long: `
 	Example: `
 	
 	revly review
-    		- Reviews all current unstaged changes in your working directory.
+			- Reviews all current unstaged changes in your working directory.
 
 	revly review -s
 	revly review --staged
@@ -66,77 +68,83 @@ Long: `
 	revly review --head
 		- Reviews the most recent commit (HEAD). If -c / --commit is provided without a value, HEAD is assumed.
 `,
-Run: func(cmd *cobra.Command, args []string) {
-			commit, _ := cmd.Flags().GetString("commit")
-			staged, _ := cmd.Flags().GetBool("staged")
-			head, _ := cmd.Flags().GetBool("head")
+	Run: func(cmd *cobra.Command, args []string) {
+		commit, _ := cmd.Flags().GetString("commit")
+		staged, _ := cmd.Flags().GetBool("staged")
+		head, _ := cmd.Flags().GetBool("head")
 
-			var diff []byte
-			var err error
+		var diff []byte
+		var err error
 
-			switch {
-			case head:
-				color.Cyan("Fetching diff for latest commit (HEAD)...")
-				diff, err = exec.Command("git", "show", "HEAD").Output()
+		switch {
+		case head:
+			color.Cyan("Fetching diff for latest commit (HEAD)...")
+			diff, err = exec.Command("git", "show", "HEAD").Output()
 
-			case commit != "":
-				color.Cyan("Fetching diff for commit <%s>...", commit)
-				diff, err = exec.Command("git", "show", commit).Output()
+		case commit != "":
+			color.Cyan("Fetching diff for commit <%s>...", commit)
+			diff, err = exec.Command("git", "show", commit).Output()
 
-			case staged:
-				color.Cyan("Fetching staged diff...")
-				diff, err = exec.Command("git", "diff", "--cached").Output()
+		case staged:
+			color.Cyan("Fetching staged diff...")
+			diff, err = exec.Command("git", "diff", "--cached").Output()
 
-			default:
-				color.Cyan("Fetching working directory diff...")
-				diff, err = exec.Command("git", "diff").Output()
-			}
+		default:
+			color.Cyan("Fetching working directory diff...")
+			diff, err = exec.Command("git", "diff").Output()
+		}
 
-			if err != nil {
-				color.Red("Error fetching diff: %v", err)
-				return
-			}
+		if err != nil {
+			color.Red("Error fetching diff: %v", err)
+			return
+		}
 
-			if strings.TrimSpace(string(diff)) == "" {
-				color.Yellow("No changes to review.")
-				return
-			}
+		if strings.TrimSpace(string(diff)) == "" {
+			color.Yellow("No changes to review.")
+			return
+		}
 
+		key := cache.Key(diff)
 
+		renderer, err := glamour.NewTermRenderer(
+			glamour.WithAutoStyle(),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		showDiff, _ := cmd.Flags().GetBool("diff")
+		if showDiff {
+			color.Yellow("=== BEGIN DIFF ===")
+			color.White(string(diff))
+			color.Yellow("=== END DIFF ===")
+		}
+
+		var output string
+		if cached, found := cache.Load(key); found {
+			output = cached
+		} else {
 			color.Green("Sending to AI...")
-
 			resp, err := llm.ReviewDiffWithLLM(string(diff))
 			if err != nil {
 				color.Red("Error from AI: %v", err)
 				return
 			}
+			_ = cache.Save(key, resp)
+			output = resp
+		}
 
-			renderer, err := glamour.NewTermRenderer(
-				glamour.WithAutoStyle(), // Auto adapts to terminal theme
-			)
-			if err != nil {
-				log.Fatal(err)
-			}
+		highlighted := highlightSeverities(output)
+		rendered, err := renderer.Render(highlighted)
+		if err != nil {
+			log.Fatal(err)
+		}
+		coloredOutput := highlightSeverities(rendered)
 
-			highlighted := highlightSeverities(resp) // preprocess severity tags before glamour
-			rendered, err := renderer.Render(highlighted)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			coloredOutput := highlightSeverities(rendered)
-
-			showDiff, _ := cmd.Flags().GetBool("diff")
-			if showDiff {
-				color.Yellow("=== BEGIN DIFF ===")
-				color.White(string(diff))
-				color.Yellow("=== END DIFF ===")
-			}
-
-			color.Green("\n=== AI Review ===")
-			fmt.Println(coloredOutput)
-			color.Green("=== END OF REVIEW ===")
-		},
+		color.Green("\n=== AI Review ===")
+		fmt.Println(coloredOutput)
+		color.Green("=== END OF REVIEW ===")
+	},
 }
 
 func init() {
