@@ -17,7 +17,7 @@ var rootCmd = &cobra.Command{
 	Short: "Revly is an AI-powered code review CLI tool",
 	Long:  "Revly is a CLI tool that uses LLMs to analyze \ngit diffs and suggest code improvements,\nreview both staged and unstaged changes,\nand provide actionable feedback on code quality.\nDo not wait for PR reviews, get instant feedback on your code changes.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Revly CLI - AI Code Review Assistant\n\nTry `revly review` to get started. \nFor more help, use `revly --help`.")
+		fmt.Println("Revly CLI - AI Code Review Assistant\n\nTry `revly init` to get started. \nFor more help, use `revly --help`.")
 	},
 }
 
