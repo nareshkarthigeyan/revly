@@ -1,0 +1,15 @@
+Hello there! 👋 
+
+This is a tiny but important change that adjusts the summary length limit in your LLM review instructions. You've reduced the maximum summary length from 350 words down to 150 words for the greeting section in LLM-generated review feedback. This is a straightforward update to refine the prompt behavior, ensuring more concise and focused review summaries from the AI. No functional code logic was altered here - just a prompt refinement.
+
+Let me review this small change for any potential issues or improvements:
+
+[INFO] internals/llm/client.go: Line 81:
+**Instruction Comment Update - Summary Length Reduced**
+Suggestion:
+This is an intentional and reasonable prompt refinement to constrain summary length. No further action needed.
+Explanation:
+Reducing the summary word limit from 350 to 150 words will encourage more concise review feedback. This helps maintain focus and readability while keeping the AI's introductory summaries brief and impactful.
+
+**Suggestions:** ✨
+This is a simple and clean prompt refinement. Consider monitoring the LLM's response quality to ensure the 150-word limit still allows for sufficient context in the generated reviews. Otherwise, this is a solid incremental improvement to keep the AI's feedback appropriately scoped. Well done!

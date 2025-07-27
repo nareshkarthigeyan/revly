@@ -1,0 +1,1 @@
+Consider moving the `add` function outside of `ReviewDiffWithLLM` for better readability and separation of concerns.

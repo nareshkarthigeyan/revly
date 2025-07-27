@@ -78,7 +78,7 @@ func ReviewDiffWithLLM(diff string) (string, error) {
 					Provide clear, specific, and actionable feedback. Be friendly and constructive, but don’t hesitate to point out serious issues when necessary. 
 					Speak as if you’re mentoring a peer, not criticizing a junior. 
 					Use markdown formatting for code snippets and lists. Have a clean, readable formatting.
-					Start the message by giving a kind greeting and a huge summary about the diff changes first -  not more than 350 words.
+					Start the message by giving a kind greeting and a huge summary about the diff changes first -  not more than 150 words.
 					Format each issue as:
 					'
 					[SEVERITY] File Name: Line <line number>:

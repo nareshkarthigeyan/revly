@@ -12,20 +12,20 @@ import (
 
 	"github.com/charmbracelet/glamour"
 	"github.com/fatih/color"
+	"github.com/nareshkarthigeyan/revly/internals/cache"
 	"github.com/nareshkarthigeyan/revly/internals/llm"
 	"github.com/spf13/cobra"
-	"github.com/nareshkarthigeyan/revly/internals/cache"
 	// "revly/internal/logging"
 )
 
 var severityPatterns = map[*regexp.Regexp]func(string) string{
-	regexp.MustCompile(`(?m)^($begin:math:display$CRITICAL$end:math:display$)$`): func(_ string) string {
+	regexp.MustCompile(`(?m)^[CRITICAL]$`): func(_ string) string {
 		return color.New(color.FgRed, color.Bold).Sprint("[CRITICAL]")
 	},
-	regexp.MustCompile(`(?m)^($begin:math:display$WARNING$end:math:display$)$`): func(_ string) string {
+	regexp.MustCompile(`(?m)^[WARNING]$`): func(_ string) string {
 		return color.New(color.FgYellow, color.Bold).Sprint("[WARNING]")
 	},
-	regexp.MustCompile(`(?m)^($begin:math:display$INFO$end:math:display$)$`): func(_ string) string {
+	regexp.MustCompile(`(?m)^[INFO]$`): func(_ string) string {
 		return color.New(color.FgBlue).Sprint("[INFO]")
 	},
 }
@@ -116,13 +116,13 @@ var reviewCmd = &cobra.Command{
 		showDiff, _ := cmd.Flags().GetBool("diff")
 		if showDiff {
 			color.Yellow("=== BEGIN DIFF ===")
-			color.White(string(diff))
+			fmt.Println(string(diff))
 			color.Yellow("=== END DIFF ===")
 		}
 
 		var output string
-		if cached, found := cache.Load(key); found {
-			output = cached
+		if cached, err := cache.Load(key); err == nil {
+			output = string(cached)
 		} else {
 			color.Green("Sending to AI...")
 			resp, err := llm.ReviewDiffWithLLM(string(diff))
@@ -130,12 +130,11 @@ var reviewCmd = &cobra.Command{
 				color.Red("Error from AI: %v", err)
 				return
 			}
-			_ = cache.Save(key, resp)
+			_ = cache.Save(key, []byte(resp))
 			output = resp
 		}
 
-		highlighted := highlightSeverities(output)
-		rendered, err := renderer.Render(highlighted)
+		rendered, err := renderer.Render(output)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -154,7 +153,7 @@ func init() {
 	reviewCmd.Flags().Lookup("commit").NoOptDefVal = "HEAD"
 	reviewCmd.Flags().BoolP("staged", "s", false, "Review only staged changes")
 	reviewCmd.Flags().Bool("head", false, "Review the latest commit (HEAD)")
-	
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

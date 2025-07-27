@@ -3,33 +3,29 @@ package cache
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
 const cacheDir = ".revly/cache"
 
-// Generate a cache key from input + model
-func Key(diff []byte) string {
-	h := sha256.New()
-	h.Write(diff)           // write raw bytes
-	h.Write([]byte(""))  // write model string
-	return hex.EncodeToString(h.Sum(nil))
+func init() {
+	os.MkdirAll(cacheDir, 0755)
 }
 
-func Save(key string, content string) error {
-	path := filepath.Join(cacheDir, key + ".txt")
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return err
-	}
-	return os.WriteFile(path, []byte(content), 0644)
+func Key(data []byte) string {
+	hasher := sha256.New()
+	hasher.Write(data)
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func Load(key string) (string, bool) {
-	path := filepath.Join(cacheDir, key + ".txt")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", false
-	}
-	return string(data), true
+func Save(key string, data []byte) error {
+	cacheFile := filepath.Join(cacheDir, key)
+	return ioutil.WriteFile(cacheFile, data, 0644)
+}
+
+func Load(key string) ([]byte, error) {
+	cacheFile := filepath.Join(cacheDir, key)
+	return ioutil.ReadFile(cacheFile)
 }

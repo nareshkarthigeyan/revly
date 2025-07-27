@@ -1,0 +1,1 @@
+Typo in `reutrn`; should be `return`. Also, unused function `add` can be removed.

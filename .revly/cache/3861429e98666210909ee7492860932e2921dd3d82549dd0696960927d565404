@@ -1,0 +1,70 @@
+Hello there! 👋 
+
+This diff brings some nice improvements to Revly. The changes mainly focus on enhancing the caching system by switching from string-based storage to byte-based storage, which is more efficient. There are also updates to the regex patterns for severity highlighting, and the code now uses `fmt.Println` instead of `color.White` for diff output. Additionally, new Git utility functions have been added for handling staged/unstaged diffs and snapshot comparisons. The LLM client has been refactored to support different prompting modes including a new pair programming assistant mode, and unused debug logs have been cleaned up. Overall, these changes improve performance, maintainability, and extend the tool's capabilities.
+
+---
+
+[WARNING] cmd/review.go: Line 119:
+> You're using `fmt.Println` for diff output, which doesn't respect color settings.
+Suggestion:
+> Consider using a method from the `color` package that allows you to print with color, or ensure that raw diffs are printed in a way that's consistent with the rest of your CLI's styling.
+
+Explanation:
+> Switching from `color.White` to `fmt.Println` loses the ability to control the color output, potentially making the diff output visually inconsistent with the rest of the CLI.
+
+---
+
+[WARNING] cmd/review.go: Lines 21, 24, 27:
+> Regex patterns for severity highlighting may not match actual output.
+Suggestion:
+> Verify that the regex patterns `[CRITICAL]`, `[WARNING]`, and `[INFO]` match the actual severity labels output by the LLM. If they include additional markup like `:math:display`, the regex should account for that.
+
+Explanation:
+> The previous regex included `$begin:math:display$...$end:math:display$` markers, which suggests the LLM might still include those in the output. The new regex only matches the plain severity labels and will fail to highlight if the markers are still present.
+
+---
+
+[INFO] internals/cache/cache.go: Line 6:
+> `ioutil` is deprecated since Go 1.16.
+Suggestion:
+> Replace `ioutil.ReadFile` and `ioutil.WriteFile` with `os.ReadFile` and `os.WriteFile` respectively.
+
+Explanation:
+> The `ioutil` package has been deprecated. Using `os` package functions directly is the recommended approach for new code.
+
+---
+
+[INFO] internals/gitutils/diff.go: Line 28:
+> Using `rsync` command for snapshot creation.
+Suggestion:
+> Be aware that `rsync` availability can vary across systems (e.g., Windows).
+Explanation:
+> `rsync` is not available on all platforms by default. Consider using Go's `filepath.Walk` and `os.Copy` for a more portable solution, or document `rsync` as a dependency.
+
+---
+
+[INFO] internals/llm/llm.go: Lines 196, 208, 218, 226:
+> Debug `fmt.Printf` statements in `GetPairProgrammingComment`.
+Suggestion:
+> Use a proper logging framework with levels (info/debug) instead of `fmt.Printf` for debug output, and disable them in production builds.
+
+Explanation:
+> Hardcoded `fmt.Printf` statements can clutter the output and are harder to manage in production. A logging framework provides better control.
+
+--- 
+
+[INFO] internals/llm/llm.go: Line 182:
+> Redundant code in `GetPairProgrammingComment`.
+Suggestion:
+> Refactor the HTTP request logic in `GetPairProgrammingComment` into a shared helper function with `GetLLMResponse` to reduce duplication.
+
+Explanation:
+> The LLM calling logic is duplicated. Sharing a common function promotes maintainability and reduces the risk of inconsistencies.
+
+---
+
+Suggestions:
+-  Consider adding unit tests for the new cache byte-based loading/saving functionality.
+-  It might be helpful to add a command or flag to clear the cache, especially since diffs can be large. 
+-  The pair programming assistant prompt is quite comprehensive. Ensure that it's tested with various diff types to confirm the LLM behaves as expected. 
+-  You may want to consider adding integration tests that mock LLM responses to ensure the CLI handles them correctly.
