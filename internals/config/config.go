@@ -9,6 +9,11 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+type GitConfig struct {
+	PushOnCommit bool `toml:"push_on_commit"`
+}
+
+
 type LLMConfig struct {
 	Endpoint string   `toml:"api_base_url"`
 	Models   []string `toml:"models"`
@@ -16,6 +21,7 @@ type LLMConfig struct {
 
 type RevlyConfig struct {
 	LLM LLMConfig `toml:"llm"`
+	Git GitConfig `toml:"git"`
 }
 
 var (

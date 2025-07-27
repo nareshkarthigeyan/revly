@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/nareshkarthigeyan/revly/internals/config"
 	"github.com/nareshkarthigeyan/revly/internals/llm"
 	"github.com/spf13/cobra"
 )
@@ -64,6 +65,14 @@ revly commit -m "Fix typo in README"
 `,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+
+		cfg, err := config.GetConfig()
+		if err != nil {
+			// // DEBUG: Error getting config
+			// fmt.Println("DEBUG: Error getting config:", err)
+			return
+		}
+
 		var target string
 		if all || len(args) == 0 {
 			target = "."
@@ -119,8 +128,17 @@ revly commit -m "Fix typo in README"
 
 		run("git", "commit", "-m", msg)
 
-		if push {
-			run("git", "push")
+		if cfg.Git.PushOnCommit || push {
+		cmd := exec.Command("git", "push")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			return
+		}
+		fmt.Println("\tPushed changes to remote repository.")
+		} else {
+			return
 		}
 	},
 }

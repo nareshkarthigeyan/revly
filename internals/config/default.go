@@ -40,7 +40,7 @@ models = [
 "nvidia/llama-3.1-nemotron-ultra-253b-v1:free",
 ]
 
-[flags]
+[git]
 show_diff = true
 push_on_commit = false
 `

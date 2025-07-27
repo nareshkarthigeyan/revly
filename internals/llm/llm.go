@@ -89,39 +89,23 @@ Here is the staged diff:`,
 		req.Header.Set("Authorization", "Bearer "+key)
 		req.Header.Set("Content-Type", "application/json")
 
-		// // DEBUG: Sending request
-		// fmt.Println("DEBUG: Sending request to", endpoint)
 
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			// // DEBUG: Error sending request
-			// fmt.Printf("DEBUG: Error calling LLM model %s: %v\n", model, err)
 			continue
 		}
 		defer resp.Body.Close()
 
-		// // DEBUG: Response status
-		// fmt.Println("DEBUG: Response status:", resp.Status)
-
 		var out Response
 		err = json.NewDecoder(resp.Body).Decode(&out)
 		if err != nil {
-			// // DEBUG: Error decoding response
-			// fmt.Printf("DEBUG: Error decoding response from model %s: %v\n", model, err)
 			continue
 		}
 
 		if len(out.Choices) > 0 {
-			// // DEBUG: Successfully got response
-			// fmt.Println("DEBUG: Successfully got response from model", model)
 			return out.Choices[0].Message.Content, nil
 		}
-		// // DEBUG: No choices in response
-		// fmt.Printf("DEBUG: Model %s returned no choices.\n", model)
 	}
-
-	// // DEBUG: All models failed
-	// fmt.Println("DEBUG: All models failed")
 	return "", errors.New("all LLM models failed to respond successfully")
 }
